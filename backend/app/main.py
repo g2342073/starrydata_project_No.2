@@ -12,11 +12,14 @@ app = FastAPI(title="Starry Sample Viewer")
 # CORS 設定
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://starrydata-project-no-2-frontend.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 
 class SearchRequest(BaseModel):
