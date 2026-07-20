@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: starry-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      - DATA_DIR=/data
+      - PARQUET_DIR=/data/parquet
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: starry-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
