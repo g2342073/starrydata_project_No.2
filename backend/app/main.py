@@ -83,7 +83,7 @@ class Paper(BaseModel):
 import sqlite3
 from .config import SQLITE_DB_PATH   
 
-con = sqlite3.connect(SQLITE_DB_PATH)
+con = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False)
 
 
 @app.on_event("startup")
