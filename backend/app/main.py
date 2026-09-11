@@ -5,7 +5,7 @@ from typing import List, Optional, Literal
 import duckdb
 import json
 from .config import SAMPLE_PARQUET, PAPERS_PARQUET
-from .db_init import ensure_parquet
+from . import db_init
 
 app = FastAPI(title="Starry Sample Viewer")
 
@@ -98,7 +98,7 @@ def startup_event():
     # ★ ここで Parquet → SQLite の初期化を実行する
     try:
         print("[startup] Parquet → SQLite 初期化開始")
-        ensure_parquet()   # ← これが超重要
+        db_init.ensure_parquet()   # ← これが超重要
         print("[startup] Parquet → SQLite 初期化完了")
     except Exception as e:
         print("[startup] 初期化エラー:", e)
