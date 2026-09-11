@@ -95,7 +95,14 @@ def startup_event():
         print("[startup] SQLite DB 接続 OK")
     except Exception as e:
         print("[startup] SQLite DB 接続エラー:", e)
-
+    # ★ ここで Parquet → SQLite の初期化を実行する
+    try:
+        print("[startup] Parquet → SQLite 初期化開始")
+        ensure_parquet()   # ← これが超重要
+        print("[startup] Parquet → SQLite 初期化完了")
+    except Exception as e:
+        print("[startup] 初期化エラー:", e)
+        
     print("[startup] アプリケーション起動処理完了")
 
 
