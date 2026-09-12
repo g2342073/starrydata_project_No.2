@@ -29,8 +29,13 @@ PAPERS_PARQUET = PARQUET_DIR / "papers.parquet"
 # 安全な clean_df
 # ============================
 def clean_df(df):
-    """Ellipsis を除去。DataFrame 以外はそのまま返す。"""
+    """Ellipsis を除去。pandas.DataFrame 以外は絶対に触らない。"""
+    # pandas.DataFrame 以外はそのまま返す
     if not isinstance(df, pd.DataFrame):
+        return df
+
+    # applymap が存在しない DataFrame（DuckDBなど）を防ぐ
+    if not hasattr(df, "applymap"):
         return df
 
     # 値の中の Ellipsis を除去
@@ -40,6 +45,7 @@ def clean_df(df):
     df.columns = [(None if c is ... else c) for c in df.columns]
 
     return df
+
 
 
 
