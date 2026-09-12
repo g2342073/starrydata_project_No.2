@@ -55,38 +55,29 @@ def clean_df(df):
 def ensure_parquet():
     print("[db_init] /tmp に Parquet と SQLite DB を作成します")
 
-    # ---------------------------------------------------------
+        # ---------------------------------------------------------
     # 1) curves
     # ---------------------------------------------------------
     curve_csv_files = sorted(glob.glob(str(CURVES_PARTS_DIR / "*.csv")))
     temp_curves_parquet = PARQUET_DIR / "curves_long_tmp.parquet"
 
     writer = None
-    fixed_schema = pa.schema([
-        ("SID", pa.string()),
-        ("prop_x", pa.string()),
-        ("prop_y", pa.string()),
-        ("unit_x", pa.string()),
-        ("unit_y", pa.string()),
-        ("x", pa.float64()),
-        ("y", pa.float64()),
-        ("composition", pa.string()),
-        ("sample_info", pa.string()),
-    ])
 
     for csv_path in curve_csv_files:
         for chunk_idx, chunk in enumerate(pd.read_csv(csv_path, chunksize=5000)):
-            chunk = clean_df(chunk)  # ← DataFrame のときだけ動く
+            chunk = clean_df(chunk)
 
-            table = pa.Table.from_pandas(chunk, schema=fixed_schema, preserve_index=False)
+            # schema を自動生成
+            table = pa.Table.from_pandas(chunk, preserve_index=False)
 
             if writer is None:
-                writer = pq.ParquetWriter(temp_curves_parquet, fixed_schema)
+                writer = pq.ParquetWriter(temp_curves_parquet, table.schema)
 
             writer.write_table(table)
 
     if writer:
         writer.close()
+
 
     # ---------------------------------------------------------
     # 2) samples
