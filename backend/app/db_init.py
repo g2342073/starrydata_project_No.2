@@ -33,9 +33,14 @@ def clean_df(df):
     if not isinstance(df, pd.DataFrame):
         return df
 
+    # 値の中の Ellipsis を除去
     df = df.applymap(lambda v: None if v is ... else v)
+
+    # 列名に Ellipsis が入っている場合も除去
     df.columns = [(None if c is ... else c) for c in df.columns]
+
     return df
+
 
 
 # ============================
