@@ -1,5 +1,4 @@
 from pathlib import Path
-import pandas as pd
 import duckdb
 import sqlite3
 import glob
@@ -16,20 +15,35 @@ def ensure_parquet():
     print("[db_init] /tmp に Parquet と SQLite DB を作成します")
 
     # ---------------------------------------------------------
-    # papers（分割 CSV 全部）
+    # DuckDB で Parquet を直接作成（pandas を使わない）
     # ---------------------------------------------------------
     papers_csv_files = sorted(glob.glob(str(PAPERS_PARTS_DIR / "*.csv")))
-    papers_df = pd.concat([pd.read_csv(f) for f in papers_csv_files], ignore_index=True)
 
-    papers_df.to_parquet(PAPERS_PARQUET, index=False)
+    con = duckdb.connect(database=":memory:")
+
+    # 空のテーブルを作成（最初の CSV の構造を使う）
+    first = papers_csv_files[0]
+    con.execute(f"""
+        CREATE TABLE papers AS
+        SELECT * FROM read_csv_auto('{first}') LIMIT 0
+    """)
+
+    # 1ファイルずつ挿入（メモリをほぼ使わない）
+    for f in papers_csv_files:
+        con.execute(f"""
+            INSERT INTO papers
+            SELECT * FROM read_csv_auto('{f}')
+        """)
+
+    # Parquet に書き出し
+    con.execute(f"""
+        COPY papers TO '{PAPERS_PARQUET}' (FORMAT PARQUET)
+    """)
 
     # ---------------------------------------------------------
     # SQLite DB を /tmp に作成
     # ---------------------------------------------------------
     print(f"[db_init] SQLite DB を作成します: {SQLITE_PATH}")
-
-    con = duckdb.connect(database=":memory:")
-    con.execute(f"CREATE TABLE papers AS SELECT * FROM read_parquet('{PAPERS_PARQUET}')")
 
     sqlite_con = sqlite3.connect(SQLITE_PATH)
 
