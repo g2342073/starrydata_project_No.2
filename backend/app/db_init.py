@@ -41,18 +41,35 @@ def ensure_parquet():
     """)
 
     # ---------------------------------------------------------
-    # SQLite DB を /tmp に作成
-    # ---------------------------------------------------------
-    print(f"[db_init] SQLite DB を作成します: {SQLITE_PATH}")
+# SQLite DB を /tmp に作成
+# ---------------------------------------------------------
+print(f"[db_init] SQLite DB を作成します: {SQLITE_PATH}")
 
-    sqlite_con = sqlite3.connect(SQLITE_PATH)
+sqlite_con = sqlite3.connect(SQLITE_PATH)
+cur = sqlite_con.cursor()
 
-    con.execute(f"""
-    COPY papers TO '{SQLITE_PATH}' (FORMAT 'sqlite');
-""")
+# SQLite にテーブルを作成（DuckDB の構造を使う）
+schema = con.execute("PRAGMA table_info('papers')").fetchall()
 
+cols = []
+for col in schema:
+    name = col[1]
+    type_ = col[2] or "TEXT"
+    cols.append(f"{name} {type_}")
 
-    sqlite_con.close()
-    con.close()
+create_sql = f"CREATE TABLE IF NOT EXISTS papers ({', '.join(cols)});"
+cur.execute(create_sql)
 
-    print("[db_init] /tmp に SQLite DB 作成完了")
+# DuckDB → SQLite に行を流し込む（numpy/pandas不要）
+rows = con.execute("SELECT * FROM papers").fetchall()
+
+placeholders = ",".join(["?"] * len(cols))
+insert_sql = f"INSERT INTO papers VALUES ({placeholders})"
+
+cur.executemany(insert_sql, rows)
+
+sqlite_con.commit()
+sqlite_con.close()
+con.close()
+
+print("[db_init] /tmp に SQLite DB 作成完了")
