@@ -47,8 +47,10 @@ def ensure_parquet():
 
     sqlite_con = sqlite3.connect(SQLITE_PATH)
 
-    df_papers = con.execute("SELECT * FROM papers").fetchdf()
-    df_papers.to_sql("papers", sqlite_con, if_exists="replace", index=False)
+    con.execute(f"""
+    COPY papers TO '{SQLITE_PATH}' (FORMAT 'sqlite');
+""")
+
 
     sqlite_con.close()
     con.close()
