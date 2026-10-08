@@ -6,6 +6,9 @@ import duckdb
 import json
 from .config import SAMPLE_PARQUET, PAPERS_PARQUET
 from . import db_init
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 app = FastAPI(title="Starry Sample Viewer")
 
@@ -406,29 +409,6 @@ def get_paper(sid: str):
         project_names=data.get("project_names"),
         created_at=str(data.get("created_at")) if data.get("created_at") is not None else None,
     )
-@app.post("/api/search")
-def search_papers(req: SearchRequest):
-    con = sqlite3.connect(SQLITE_PATH)
-    con.row_factory = sqlite3.Row
-
-    q = f"%{req.query.lower()}%"
-
-    rows = con.execute(
-        """
-        SELECT *
-        FROM papers
-        WHERE
-            lower(DOI) LIKE ?
-            OR lower(composition) LIKE ?
-            OR lower(project_names) LIKE ?
-            OR lower(comments) LIKE ?
-        """,
-        (q, q, q, q)
-    ).fetchall()
-
-    con.close()
-
-    return {"results": [dict(r) for r in rows]}
 
 
 
