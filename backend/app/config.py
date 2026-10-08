@@ -17,4 +17,4 @@ SAMPLE_PARQUET = PARQUET_DIR / "sample.parquet"
 PAPERS_PARQUET = PARQUET_DIR / "papers.parquet"
 
 # SQLite DB の出力先（最重要）
-SQLITE_DB_PATH = "/tmp/starrydata.db"
+SQLITE_DB_PATH = Path("/tmp/starrydata.db")
