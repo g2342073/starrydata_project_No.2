@@ -17,24 +17,27 @@ def ensure_parquet():
     papers_csv_files = sorted(glob.glob(str(PAPERS_PARTS_DIR / "*.csv")))
     con = duckdb.connect(database=":memory:")
 
+    # 空テーブル作成
     first = papers_csv_files[0]
     con.execute(f"""
         CREATE TABLE papers AS
         SELECT * FROM read_csv_auto('{first}') LIMIT 0
     """)
 
+    # CSV を全部挿入
     for f in papers_csv_files:
         con.execute(f"""
             INSERT INTO papers
             SELECT * FROM read_csv_auto('{f}')
         """)
 
+    # Parquet 出力
     con.execute(f"""
         COPY papers TO '{PAPERS_PARQUET}' (FORMAT PARQUET)
     """)
 
+    # SQLite 作成
     print(f"[db_init] SQLite DB を作成します: {SQLITE_PATH}")
-
     sqlite_con = sqlite3.connect(SQLITE_PATH)
     cur = sqlite_con.cursor()
 
@@ -50,11 +53,10 @@ def ensure_parquet():
     create_sql = f"CREATE TABLE IF NOT EXISTS papers ({', '.join(cols)});"
     cur.execute(create_sql)
 
+    # データ挿入
     rows = con.execute("SELECT * FROM papers").fetchall()
-
     placeholders = ",".join(["?"] * len(cols))
     insert_sql = f"INSERT INTO papers VALUES ({placeholders})"
-
     cur.executemany(insert_sql, rows)
 
     sqlite_con.commit()
