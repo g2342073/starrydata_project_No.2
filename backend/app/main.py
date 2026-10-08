@@ -86,20 +86,29 @@ class Paper(BaseModel):
 import sqlite3
 from .config import SQLITE_DB_PATH   
 
-con = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False)
+con = None
 
 
 @app.on_event("startup")
 def startup_event():
+    global con
+
+    # DB がなければ初期化
+    if not SQLITE_DB_PATH.exists():
+        print("[startup] DB が存在しないため初期化します")
+        db_init.ensure_parquet()
+
     print("[startup] SQLite DB を開きます")
+    con = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False)
 
     try:
         con.execute("SELECT 1")
         print("[startup] SQLite DB 接続 OK")
     except Exception as e:
         print("[startup] SQLite DB 接続エラー:", e)
-        
+
     print("[startup] アプリケーション起動処理完了")
+
 
 
 import re
