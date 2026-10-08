@@ -95,13 +95,6 @@ def startup_event():
         print("[startup] SQLite DB 接続 OK")
     except Exception as e:
         print("[startup] SQLite DB 接続エラー:", e)
-    # ★ ここで Parquet → SQLite の初期化を実行する
-    try:
-        print("[startup] Parquet → SQLite 初期化開始")
-        db_init.ensure_parquet()   # ← これが超重要
-        print("[startup] Parquet → SQLite 初期化完了")
-    except Exception as e:
-        print("[startup] 初期化エラー:", e)
         
     print("[startup] アプリケーション起動処理完了")
 
@@ -149,6 +142,12 @@ def build_components_filter_sql(components: List[str], query: Optional[str], mod
 
 @app.post("/api/search", response_model=SearchResponse)
 def search_axis(request: SearchRequest):
+
+    # ★ 初回検索時だけ DB を生成する
+    if not SQLITE_DB_PATH.exists():
+        print("[search] DB が存在しないため初期化します")
+        db_init.ensure_parquet()
+
     condition = build_components_filter_sql(request.components, request.query, request.mode)
 
     # prop_x, prop_y ごとに unit_x / unit_y のユニークリストを集計
@@ -245,6 +244,12 @@ def _to_float_or_none(v) -> Optional[float]:
 
 @app.post("/api/filter", response_model=FilterResponse)
 def filter_points(payload: dict = Body(...)):
+    
+    # ★ 初回検索時だけ DB を生成する
+    if not SQLITE_DB_PATH.exists():
+        print("[filter] DB が存在しないため初期化します")
+        db_init.ensure_parquet()
+
     try:
         components = payload.get("components") or []
 
