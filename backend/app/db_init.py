@@ -1,66 +1,98 @@
-from pathlib import Path
-import duckdb
 import sqlite3
-import glob
+import json
+from pathlib import Path
+import pyarrow.parquet as pq
 
-PARQUET_DIR = Path("/tmp/parquet")
-PARQUET_DIR.mkdir(parents=True, exist_ok=True)
-
-SQLITE_PATH = Path("/tmp/starrydata.db")
-
-PAPERS_PARTS_DIR = Path("data/csv_parts_papers")
-PAPERS_PARQUET = PARQUET_DIR / "papers.parquet"
+from .config import SAMPLE_PARQUET, PAPERS_PARQUET, SQLITE_DB_PATH
 
 def ensure_parquet():
-    print("[db_init] /tmp に Parquet と SQLite DB を作成します")
+    """
+    Parquet → SQLite を初期化する。
+    DuckDB を使わず、pyarrow で直接読み込む。
+    """
 
-    papers_csv_files = sorted(glob.glob(str(PAPERS_PARTS_DIR / "*.csv")))
-    con = duckdb.connect(database=":memory:")
+    print("[db_init] SQLite DB を作成します:", SQLITE_DB_PATH)
 
-    # 空テーブル作成
-    first = papers_csv_files[0]
-    con.execute(f"""
-        CREATE TABLE papers AS
-        SELECT * FROM read_csv_auto('{first}') LIMIT 0
+    # DB ファイル削除（毎回クリーンに）
+    if SQLITE_DB_PATH.exists():
+        SQLITE_DB_PATH.unlink()
+
+    con = sqlite3.connect(SQLITE_DB_PATH)
+    cur = con.cursor()
+
+    # sample テーブル作成
+    cur.execute("""
+        CREATE TABLE sample (
+            SID TEXT,
+            prop_x TEXT,
+            prop_y TEXT,
+            unit_x TEXT,
+            unit_y TEXT,
+            x REAL,
+            y REAL,
+            composition TEXT,
+            sample_info TEXT
+        )
     """)
 
-    # CSV を全部挿入
-    for f in papers_csv_files:
-        con.execute(f"""
-            INSERT INTO papers
-            SELECT * FROM read_csv_auto('{f}')
-        """)
-
-    # Parquet 出力
-    con.execute(f"""
-        COPY papers TO '{PAPERS_PARQUET}' (FORMAT PARQUET)
+    # papers テーブル作成
+    cur.execute("""
+        CREATE TABLE papers (
+            SID TEXT,
+            DOI TEXT,
+            URL TEXT,
+            issued TEXT,
+            author TEXT,
+            title TEXT,
+            container_title TEXT,
+            container_title_short TEXT,
+            volume TEXT,
+            issue TEXT,
+            page TEXT,
+            ISSN TEXT,
+            publisher TEXT,
+            project_names TEXT,
+            created_at TEXT
+        )
     """)
 
-    # SQLite 作成
-    print(f"[db_init] SQLite DB を作成します: {SQLITE_PATH}")
-    sqlite_con = sqlite3.connect(SQLITE_PATH)
-    cur = sqlite_con.cursor()
+    # ---- sample.parquet を読み込む ----
+    print("[db_init] sample.parquet を読み込みます:", SAMPLE_PARQUET)
+    table = pq.read_table(SAMPLE_PARQUET)
+    df = table.to_pandas()
 
-    # DuckDB のテーブル構造を取得
-    schema = con.execute("PRAGMA table_info('papers')").fetchall()
+    rows = []
+    for _, row in df.iterrows():
+        rows.append((
+            row.get("SID"),
+            row.get("prop_x"),
+            row.get("prop_y"),
+            row.get("unit_x"),
+            row.get("unit_y"),
+            row.get("x"),
+            row.get("y"),
+            row.get("composition"),
+            json.dumps(row.get("sample_info"))
+        ))
 
-    cols = []
-    for col in schema:
-        name = col[1]
-        type_ = col[2] or "TEXT"
-        cols.append(f"{name} {type_}")
+    cur.executemany("""
+        INSERT INTO sample VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, rows)
 
-    create_sql = f"CREATE TABLE IF NOT EXISTS papers ({', '.join(cols)});"
-    cur.execute(create_sql)
+    # ---- papers.parquet を読み込む ----
+    print("[db_init] papers.parquet を読み込みます:", PAPERS_PARQUET)
+    table2 = pq.read_table(PAPERS_PARQUET)
+    df2 = table2.to_pandas()
 
-    # データ挿入
-    rows = con.execute("SELECT * FROM papers").fetchall()
-    placeholders = ",".join(["?"] * len(cols))
-    insert_sql = f"INSERT INTO papers VALUES ({placeholders})"
-    cur.executemany(insert_sql, rows)
+    rows2 = []
+    for _, row in df2.iterrows():
+        rows2.append(tuple(row.values))
 
-    sqlite_con.commit()
-    sqlite_con.close()
+    cur.executemany("""
+        INSERT INTO papers VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, rows2)
+
+    con.commit()
     con.close()
 
-    print("[db_init] /tmp に SQLite DB 作成完了")
+    print("[db_init] SQLite DB 初期化完了")
