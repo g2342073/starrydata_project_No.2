@@ -6,7 +6,7 @@ import {
   Paper
 } from "./types";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const API_BASE = "https://starrydata-project-no-2-backend.onrender.com";
 
 export type SearchMode = "all_terms" | "exact";
 
@@ -16,12 +16,12 @@ export type SearchPayload = {
   mode?: SearchMode;
 };
 
-export async function searchAxis(arg: string[] | SearchPayload): Promise<SearchResponse> {  // ŒİŠ·F‚±‚ê‚Ü‚Å’Ê‚è”z—ñ‚ÅŒÄ‚Î‚ê‚½ê‡
+export async function searchAxis(arg: string[] | SearchPayload): Promise<SearchResponse> {  // ï¿½İŠï¿½ï¿½Fï¿½ï¿½ï¿½ï¿½Ü‚Å’Ê‚ï¿½zï¿½ï¿½ÅŒÄ‚Î‚ê‚½ï¿½ê‡
   const payload: SearchPayload = Array.isArray(arg)
     ? { components: arg, mode: "all_terms" }
     : { ...arg };
 
-  // ‰½‚àw’è‚ª‚È‚¯‚ê‚Î]—ˆ‚Ç‚¨‚è
+  // ï¿½ï¿½ï¿½ï¿½ï¿½wï¿½è‚ªï¿½È‚ï¿½ï¿½ï¿½Î]ï¿½ï¿½ï¿½Ç‚ï¿½ï¿½ï¿½
   if (!payload.mode) payload.mode = "all_terms";
   if (!payload.components) payload.components = [];
 

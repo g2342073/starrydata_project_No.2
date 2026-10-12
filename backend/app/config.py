@@ -1,20 +1,8 @@
-import os
 from pathlib import Path
 
-# GitHub に置く CSV の場所（固定）
-DATA_DIR = Path("data")
+# backend/app/config.py から見て 3階層上がるとプロジェクトルート
+BASE_DIR = Path(__file__).resolve().parents[2]
 
-# Render の /tmp に Parquet を作る
-PARQUET_DIR = Path("/tmp/parquet")
-
-# 分割CSVの場所
-CURVES_PARTS_DIR = DATA_DIR / "csv_parts_curves"
-SAMPLES_PARTS_DIR = DATA_DIR / "csv_parts_samples"
-PAPERS_PARTS_DIR = DATA_DIR / "csv_parts_papers"
-
-# Parquet 出力先（/tmp）
-SAMPLE_PARQUET = PARQUET_DIR / "sample.parquet"
-PAPERS_PARQUET = PARQUET_DIR / "papers.parquet"
-
-# SQLite DB の出力先（最重要）
-SQLITE_DB_PATH = Path("/tmp/starrydata.db")
+DATA_DIR = BASE_DIR / "data"
+PARQUET_DIR = DATA_DIR / "parquet_parts_papers"
+SQLITE_DB_PATH = DATA_DIR / "papers.db"

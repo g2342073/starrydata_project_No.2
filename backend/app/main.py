@@ -242,6 +242,19 @@ def filter_points(payload: dict = Body(...)):
 
     points = []
     for r in rows:
+        # x, y はリストなのでパースする
+        try:
+            xs = json.loads(r[1])
+            ys = json.loads(r[2])
+        except:
+            continue
+
+    # 長さが一致しない場合はスキップ
+        if not isinstance(xs, list) or not isinstance(ys, list):
+            continue
+        if len(xs) != len(ys):
+            continue
+
         info = {}
         if r[4]:
             try:
@@ -260,18 +273,25 @@ def filter_points(payload: dict = Body(...)):
         if form_category_filter and form.get("category") != form_category_filter:
             continue
 
-        points.append(
-            Point(
-                SID=r[0],
-                x=r[1],
-                y=r[2],
-                composition=r[3],
-                form_category=form.get("category"),
-                form_comment=form.get("comment"),
-                purity_category=purity.get("category"),
-                purity_comment=purity.get("comment"),
+        # リストの各点を展開して追加
+        for x_raw, y_raw in zip(xs, ys):
+            x_val = _to_float_or_none(x_raw)
+            y_val = _to_float_or_none(y_raw)
+            if x_val is None or y_val is None:
+                continue 
+
+            points.append(
+                Point(
+                    SID=r[0],
+                    x=x_val,
+                    y=y_val,
+                    composition=r[3],
+                    form_category=form.get("category"),
+                    form_comment=form.get("comment"),
+                    purity_category=purity.get("category"),
+                    purity_comment=purity.get("comment"),
+                )
             )
-        )
 
     return FilterResponse(axis_x=prop_x, axis_y=prop_y, points=points)
 

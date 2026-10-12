@@ -1,98 +1,86 @@
 import sqlite3
-import json
-from pathlib import Path
 import pyarrow.parquet as pq
+from pathlib import Path
 
-from .config import SAMPLE_PARQUET, PAPERS_PARQUET, SQLITE_DB_PATH
+# config.py の設定を使う
+from .config import PARQUET_DIR, SQLITE_DB_PATH
 
-def ensure_parquet():
-    """
-    Parquet → SQLite を初期化する。
-    DuckDB を使わず、pyarrow で直接読み込む。
-    """
+DB_PATH = SQLITE_DB_PATH
 
-    print("[db_init] SQLite DB を作成します:", SQLITE_DB_PATH)
+def init_db():
+    if DB_PATH.exists():
+        DB_PATH.unlink()
 
-    # DB ファイル削除（毎回クリーンに）
-    if SQLITE_DB_PATH.exists():
-        SQLITE_DB_PATH.unlink()
+    print("[db_init] SQLite DB を新規作成:", DB_PATH)
 
-    con = sqlite3.connect(SQLITE_DB_PATH)
+    con = sqlite3.connect(DB_PATH)
     cur = con.cursor()
 
-    # sample テーブル作成
     cur.execute("""
-        CREATE TABLE sample (
+        CREATE TABLE papers (
             SID TEXT,
+            DOI TEXT,
+            composition TEXT,
+            sample_id TEXT,
+            figure_id TEXT,
             prop_x TEXT,
             prop_y TEXT,
             unit_x TEXT,
             unit_y TEXT,
             x REAL,
             y REAL,
+            created_at TEXT,
+            updated_at TEXT,
+            project_names TEXT,
+            comments TEXT
+        )
+    """)
+
+    for pq_file in PARQUET_DIR.glob("*.parquet"):
+        print(f"[load] {pq_file.name} を読み込み中…")
+
+        table = pq.read_table(pq_file)
+        df = table.to_pandas()
+
+        df.to_sql("papers", con, if_exists="append", index=False)
+
+        print(f"[done] {pq_file.name} を挿入しました")
+
+    # ===== sample テーブル作成 =====
+    cur.execute("""
+        CREATE TABLE sample (
+            SID TEXT,
             composition TEXT,
+            prop_x TEXT,
+            prop_y TEXT,
+            unit_x TEXT,
+            unit_y TEXT,
+            x REAL,
+            y REAL,
             sample_info TEXT
         )
     """)
 
-    # papers テーブル作成
+    # ===== papers → sample にコピー（最低限）=====
     cur.execute("""
-        CREATE TABLE papers (
-            SID TEXT,
-            DOI TEXT,
-            URL TEXT,
-            issued TEXT,
-            author TEXT,
-            title TEXT,
-            container_title TEXT,
-            container_title_short TEXT,
-            volume TEXT,
-            issue TEXT,
-            page TEXT,
-            ISSN TEXT,
-            publisher TEXT,
-            project_names TEXT,
-            created_at TEXT
-        )
+        INSERT INTO sample (SID, composition, prop_x, prop_y, unit_x, unit_y, x, y, sample_info)
+        SELECT
+            SID,
+            composition,
+            prop_x,
+            prop_y,
+            unit_x,
+            unit_y,
+            x,
+            y,
+            '{}'  -- sample_info はとりあえず空の JSON
+        FROM papers
     """)
-
-    # ---- sample.parquet を読み込む ----
-    print("[db_init] sample.parquet を読み込みます:", SAMPLE_PARQUET)
-    table = pq.read_table(SAMPLE_PARQUET)
-    df = table.to_pandas()
-
-    rows = []
-    for _, row in df.iterrows():
-        rows.append((
-            row.get("SID"),
-            row.get("prop_x"),
-            row.get("prop_y"),
-            row.get("unit_x"),
-            row.get("unit_y"),
-            row.get("x"),
-            row.get("y"),
-            row.get("composition"),
-            json.dumps(row.get("sample_info"))
-        ))
-
-    cur.executemany("""
-        INSERT INTO sample VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, rows)
-
-    # ---- papers.parquet を読み込む ----
-    print("[db_init] papers.parquet を読み込みます:", PAPERS_PARQUET)
-    table2 = pq.read_table(PAPERS_PARQUET)
-    df2 = table2.to_pandas()
-
-    rows2 = []
-    for _, row in df2.iterrows():
-        rows2.append(tuple(row.values))
-
-    cur.executemany("""
-        INSERT INTO papers VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, rows2)
 
     con.commit()
     con.close()
 
-    print("[db_init] SQLite DB 初期化完了")
+    print("\n=== SQLite DB 初期化完了 ===")
+
+if __name__ == "__main__" or __name__ == "backend.app.db_init":
+    init_db()
