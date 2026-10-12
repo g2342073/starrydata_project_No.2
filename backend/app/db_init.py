@@ -2,12 +2,14 @@ import sqlite3
 import pyarrow.parquet as pq
 from pathlib import Path
 
-# config.py の設定を使う
 from .config import PARQUET_DIR, SQLITE_DB_PATH
 
 DB_PATH = SQLITE_DB_PATH
 
 def init_db():
+    # Render の /tmp は空なので、フォルダを作る必要がある
+    PARQUET_DIR.mkdir(parents=True, exist_ok=True)
+
     if DB_PATH.exists():
         DB_PATH.unlink()
 
@@ -46,7 +48,6 @@ def init_db():
 
         print(f"[done] {pq_file.name} を挿入しました")
 
-    # ===== sample テーブル作成 =====
     cur.execute("""
         CREATE TABLE sample (
             SID TEXT,
@@ -61,7 +62,6 @@ def init_db():
         )
     """)
 
-    # ===== papers → sample にコピー（最低限）=====
     cur.execute("""
         INSERT INTO sample (SID, composition, prop_x, prop_y, unit_x, unit_y, x, y, sample_info)
         SELECT
@@ -73,7 +73,7 @@ def init_db():
             unit_y,
             x,
             y,
-            '{}'  -- sample_info はとりあえず空の JSON
+            '{}'
         FROM papers
     """)
 

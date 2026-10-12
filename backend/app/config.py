@@ -1,8 +1,7 @@
 from pathlib import Path
 
-# backend/app/config.py から見て 3階層上がるとプロジェクトルート
-BASE_DIR = Path(__file__).resolve().parents[2]
+# Render では /tmp が書き込み可能
+SQLITE_DB_PATH = Path("/tmp/papers.db")
 
-DATA_DIR = BASE_DIR / "data"
-PARQUET_DIR = DATA_DIR / "parquet_parts_papers"
-SQLITE_DB_PATH = DATA_DIR / "papers.db"
+# Parquet は /tmp に置くのが安全
+PARQUET_DIR = Path("/tmp/parquet_parts_papers")
