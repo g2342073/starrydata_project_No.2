@@ -9,6 +9,8 @@ from pathlib import Path
 
 from .config import SQLITE_DB_PATH
 from . import db_init
+from .download_parquet import download_parquet_files
+
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -29,10 +31,13 @@ con = None
 def startup_event():
     global con
 
+    # Supabase から Parquet をダウンロード
+    download_parquet_files()
+
     # DB がなければ初期化
     if not SQLITE_DB_PATH.exists():
         print("[startup] DB が存在しないため初期化します")
-        db_init.ensure_parquet()
+        db_init.init_db()
 
     print("[startup] SQLite DB を開きます")
     con = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False)
