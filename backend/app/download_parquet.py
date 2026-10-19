@@ -2,7 +2,7 @@ import requests
 from pathlib import Path
 
 # Parquet を保存するフォルダ
-PARQUET_DIR = Path("data/parquet_parts_papers")
+PARQUET_DIR = Path("/tmp/parquet_parts_papers")
 PARQUET_DIR.mkdir(parents=True, exist_ok=True)
 
 # Supabase の URL を貼る（あなたがコピーしたやつ）
