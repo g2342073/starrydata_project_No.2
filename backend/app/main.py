@@ -34,10 +34,9 @@ def startup_event():
     # Supabase から Parquet をダウンロード
     download_parquet_files()
 
-    # DB がなければ初期化
-    if not SQLITE_DB_PATH.exists():
-        print("[startup] DB が存在しないため初期化します")
-        db_init.init_db()
+    # ★ DB を毎回再生成する（無料枠でも確実に最新化）
+    print("[startup] DB を再生成します")
+    db_init.init_db()
 
     print("[startup] SQLite DB を開きます")
     con = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False)

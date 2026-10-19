@@ -3,3 +3,4 @@ uvicorn[standard]
 pyarrow
 pydantic
 numpy
+requests
