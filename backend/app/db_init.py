@@ -4,20 +4,21 @@ from pathlib import Path
 
 from .config import PARQUET_DIR, SQLITE_DB_PATH
 
-DB_PATH = SQLITE_DB_PATH
-
 def init_db():
-    # Parquet フォルダが無ければ作る
+    # DB フォルダを作る
+    SQLITE_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    # Parquet フォルダを作る（念のため）
     PARQUET_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 既存 DB があれば再生成しない（Render の複数起動対策）
-    if DB_PATH.exists():
+    # 既存 DB があれば再生成しない
+    if SQLITE_DB_PATH.exists():
         print("[db_init] 既存の DB を使用します")
         return
 
-    print("[db_init] SQLite DB を新規作成:", DB_PATH)
+    print("[db_init] SQLite DB を新規作成:", SQLITE_DB_PATH)
 
-    con = sqlite3.connect(DB_PATH)
+    con = sqlite3.connect(SQLITE_DB_PATH)
     cur = con.cursor()
 
     # papers テーブル
@@ -41,7 +42,7 @@ def init_db():
         )
     """)
 
-    # Parquet を読み込んで papers に挿入
+    # Parquet → papers に挿入
     for pq_file in PARQUET_DIR.glob("*.parquet"):
         print(f"[load] {pq_file.name} を読み込み中…")
         table = pq.read_table(pq_file)

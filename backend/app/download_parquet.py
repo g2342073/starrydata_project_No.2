@@ -1,11 +1,10 @@
 import requests
 from pathlib import Path
+from .config import PARQUET_DIR
 
-# Parquet を保存するフォルダ
-PARQUET_DIR = Path("/tmp/parquet_parts_papers")
+# Parquet フォルダを作る
 PARQUET_DIR.mkdir(parents=True, exist_ok=True)
 
-# Supabase の URL を貼る（あなたがコピーしたやつ）
 URLS = [
     "https://mmcfbpjelndhpmiaftny.supabase.co/storage/v1/object/public/starrydata/part1.parquet",
     "https://mmcfbpjelndhpmiaftny.supabase.co/storage/v1/object/public/starrydata/part2.parquet",
@@ -19,7 +18,6 @@ def download_parquet_files():
         filename = url.split("/")[-1]
         save_path = PARQUET_DIR / filename
 
-        # 既にあるならスキップ（Render の再起動時に無駄なダウンロードを防ぐ）
         if save_path.exists():
             print(f"[skip] {filename} は既に存在します")
             continue
