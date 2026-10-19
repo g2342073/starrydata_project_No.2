@@ -29,18 +29,16 @@ con = None
 
 @app.on_event("startup")
 def startup_event():
-    global con
+    print("[startup] Parquet をダウンロードします")
+    download_parquet_files()  # ← 完了するまで待つ
 
-    # Supabase から Parquet をダウンロード
-    download_parquet_files()
-
-    # ★ DB を毎回再生成する（無料枠でも確実に最新化）
     print("[startup] DB を再生成します")
-    db_init.init_db()
+    db_init.init_db()         # ← Parquet が揃ってから DB を作る
 
     print("[startup] SQLite DB を開きます")
     con = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False)
     print("[startup] SQLite DB 接続 OK")
+
 
 
 # ====== 以下、あなたの既存ロジックをそのまま使用 ======
