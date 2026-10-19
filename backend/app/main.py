@@ -30,12 +30,17 @@ con = None
 @app.on_event("startup")
 def startup_event():
     print("[startup] Parquet をダウンロードします")
-    download_parquet_files()  # ← 完了するまで待つ
+    download_parquet_files()  # ← 完了まで待つ
 
-    print("[startup] DB を再生成します")
-    db_init.init_db()         # ← Parquet が揃ってから DB を作る
+    print("[startup] DB が存在するか確認します")
+    if not SQLITE_DB_PATH.exists():
+        print("[startup] DB を再生成します")
+        db_init.init_db()
+    else:
+        print("[startup] 既存の DB を使用します")
 
     print("[startup] SQLite DB を開きます")
+    global con
     con = sqlite3.connect(SQLITE_DB_PATH, check_same_thread=False)
     print("[startup] SQLite DB 接続 OK")
 
