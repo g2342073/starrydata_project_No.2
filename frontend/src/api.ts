@@ -6,7 +6,7 @@ import {
   Paper
 } from "./types";
 
-const API_BASE = "https://starrydata-project-no-2-backend.onrender.com";
+const API_BASE = "https://starrydata-project-no-2.onrender.com";
 
 export type SearchMode = "all_terms" | "exact";
 
