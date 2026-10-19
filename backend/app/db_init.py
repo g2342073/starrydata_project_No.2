@@ -10,6 +10,11 @@ def init_db():
     # Parquet フォルダが無ければ作る
     PARQUET_DIR.mkdir(parents=True, exist_ok=True)
 
+    # 既存 DB があれば再生成しない（Render の複数起動対策）
+    if DB_PATH.exists():
+        print("[db_init] 既存の DB を使用します")
+        return
+
     print("[db_init] SQLite DB を新規作成:", DB_PATH)
 
     con = sqlite3.connect(DB_PATH)
