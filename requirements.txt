@@ -3,3 +3,4 @@ uvicorn
 pyarrow
 python-multipart
 requests
+pandas
