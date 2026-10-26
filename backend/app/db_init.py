@@ -42,13 +42,50 @@ def init_db():
         )
     """)
 
+    cur.execute("""
+    CREATE TABLE paper_metadata (
+        SID TEXT,
+        DOI TEXT,
+        URL TEXT,
+        issued TEXT,
+        author TEXT,
+        title TEXT,
+        container_title TEXT,
+        container_title_short TEXT,
+        volume TEXT,
+        issue TEXT,
+        page TEXT,
+        ISSN TEXT,
+        publisher TEXT,
+        project_names TEXT,
+        created_at TEXT
+        )
+    """)
+
     # Parquet → papers に挿入
     for pq_file in PARQUET_DIR.glob("*.parquet"):
         print(f"[load] {pq_file.name} を読み込み中…")
+
         table = pq.read_table(pq_file)
         df = table.to_pandas()
-        df.to_sql("papers", con, if_exists="append", index=False)
-        print(f"[done] {pq_file.name} を挿入しました")
+
+        if pq_file.name.startswith("papers_part"):
+            df.to_sql(
+                "paper_metadata",
+                con,
+                if_exists="append",
+                index=False
+            )
+            print(f"[done] {pq_file.name} → paper_metadata")
+
+        else:
+            df.to_sql(
+                "papers",
+                con,
+                if_exists="append",
+                index=False
+            )
+            print(f"[done] {pq_file.name} → papers")
 
     # sample テーブル
     cur.execute("""
