@@ -307,14 +307,22 @@ def filter_points(payload: dict = Body(...)):
 def get_paper(sid: str):
     global con
 
-    sid2 = sid.replace("'", "''")
-    sql = f"SELECT * FROM paper_metadata WHERE SID='{sid2}' LIMIT 1"
+    cursor = con.execute(
+        """
+        SELECT *
+        FROM paper_metadata
+        WHERE SID = ?
+        LIMIT 1
+        """,
+        (sid,)
+    )
 
-    row = con.execute(sql).fetchone()
+    row = cursor.fetchone()
+
     if not row:
         raise HTTPException(404, "Paper not found")
 
-    col_names = [d[0] for d in con.description]
+    col_names = [d[0] for d in cursor.description]
     data = dict(zip(col_names, row))
 
     return Paper(**data)
