@@ -13,8 +13,8 @@ URLS = [
     "https://mmcfbpjelndhpmiaftny.supabase.co/storage/v1/object/public/starrydata/part5.parquet",
 
     #論文データ
-    "https://mmcfbpjelndhpmiaftny.supabase.co/storage/v1/object/public/starrydata/papers_part1.parquet"
-    "https://mmcfbpjelndhpmiaftny.supabase.co/storage/v1/object/public/starrydata/papers_part2.parquet"
+    "https://mmcfbpjelndhpmiaftny.supabase.co/storage/v1/object/public/starrydata/papers_part1.parquet",
+    "https://mmcfbpjelndhpmiaftny.supabase.co/storage/v1/object/public/starrydata/papers_part2.parquet",
 ]
 
 def download_parquet_files():
