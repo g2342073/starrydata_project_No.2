@@ -308,7 +308,7 @@ def get_paper(sid: str):
     global con
 
     sid2 = sid.replace("'", "''")
-    sql = f"SELECT * FROM papers WHERE SID='{sid2}' LIMIT 1"
+    sql = f"SELECT * FROM paper_metadata WHERE SID='{sid2}' LIMIT 1"
 
     row = con.execute(sql).fetchone()
     if not row:
